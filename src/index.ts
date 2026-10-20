@@ -7,6 +7,7 @@ import { DeleteShapeCommand } from "./commands/DeleteShapeCommand.js";
 import { CreateShapeCommand } from "./commands/CreateShapeCommand.js";
 import { GroupShape } from "./model/shapes/GroupShape.js";
 import { AddToShapeCommand } from "./commands/AddToShapeCommand.js";
+import { GroupShapesCommand } from "./commands/GroupShapesCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -39,6 +40,7 @@ terminal.on("line", (input) => {
         undo
         redo
         delete <id>
+        group <newGid> <id1> <id2>...
         help
         exit`);
   } else if (command === "init") {
@@ -109,6 +111,21 @@ terminal.on("line", (input) => {
         } catch (error) {
           console.log(`error: ${(error as Error).message}`);
         }
+      }
+    }
+  } else if (command === "group") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length < 3) {
+      console.log("error: usage: group <newGid> <id1> <id2>...");
+    } else {
+      try {
+        const message = history.execute(
+          new GroupShapesCommand(document, args[0], args.slice(1)),
+        );
+        console.log(message);
+      } catch (error) {
+        console.log(`error: ${(error as Error).message}`);
       }
     }
   } else if (command === "addto") {
