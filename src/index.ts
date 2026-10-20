@@ -3,6 +3,7 @@ import { SvgDocument } from "./model/SvgDocument.js";
 import { RectShape } from "./model/shapes/RectShape.js";
 import { CommandHistory } from "./commands/CommandHistory.js";
 import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
+import { DeleteShapeCommand } from "./commands/DeleteShapeCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -32,6 +33,7 @@ terminal.on("line", (input) => {
         move <id> <dx> <dy>
         undo
         redo
+        delete <id>
         help
         exit`);
   } else if (command === "init") {
@@ -71,6 +73,27 @@ terminal.on("line", (input) => {
         console.log(`rect#${shape.id} created`);
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
+      }
+    }
+  } else if (command === "delete") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 1) {
+      console.log("error: usage: delete <id>");
+    } else {
+      const shape = document.getShape(args[0]);
+
+      if (shape === undefined) {
+        console.log(`error: no such shape: ${args[0]}`);
+      } else {
+        try {
+          const message = history.execute(
+            new DeleteShapeCommand(document, shape),
+          );
+          console.log(message);
+        } catch (error) {
+          console.log(`error: ${(error as Error).message}`);
+        }
       }
     }
   } else if (command === "move") {

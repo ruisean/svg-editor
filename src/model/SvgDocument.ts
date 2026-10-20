@@ -54,4 +54,15 @@ export class SvgDocument {
   getShapes(): Shape[] {
     return [...this._shapes.values()];
   }
+
+  removeShape(id: string): Shape | undefined {
+    const shape = this._shapes.get(id);
+
+    if (shape === undefined) {
+      return undefined;
+    }
+
+    this._shapes.delete(id);
+    return shape;
+  }
 }
