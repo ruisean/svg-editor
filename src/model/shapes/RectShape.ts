@@ -55,6 +55,21 @@ export class RectShape extends Shape {
     this._height *= factor;
   }
 
+  getDetails(): string[] {
+  const details = [
+    `x=${this._x}`,
+    `y=${this._y}`,
+    `width=${this._width}`,
+    `height=${this._height}`,
+  ];
+
+  if (this._fill !== undefined) {
+    details.push(`fill=${this._fill}`);
+  }
+
+  return details;
+  }
+
   toSvg(): string {
     const fill = this._fill === undefined
       ? ""

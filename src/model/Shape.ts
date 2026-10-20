@@ -12,4 +12,6 @@ export abstract class Shape {
   abstract get type(): string;
 
   abstract toSvg(): string;
+
+  abstract getDetails(): string[];
 }

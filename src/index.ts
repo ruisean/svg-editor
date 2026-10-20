@@ -20,7 +20,7 @@ terminal.on("line", (input) => {
   const args = parts.slice(1);
 
   if (command === "help") {
-    console.log("Commands: init [width] [height], canvas [width] [height], create rect <id> <x> <y> <width> <height> [fill], help, exit");
+    console.log("Commands: init [width] [height], canvas [width] [height], create rect <id> <x> <y> <width> <height> [fill], show <id>,help, exit");
   } else if (command === "init") {
     if (args.length !== 0 && args.length !== 2) {
       console.log("error: usage: init [width] [height]");
@@ -57,6 +57,21 @@ terminal.on("line", (input) => {
         console.log(`rect#${shape.id} created`);
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
+      }
+    }
+  } else if (command === "show") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 1) {
+      console.log("error: usage: show <id>");
+    } else {
+      const shape = document.getShape(args[0]);
+
+      if (shape === undefined) {
+        console.log(`error: no such shape: ${args[0]}`);
+      } else {
+        console.log(`${shape.type}#${shape.id}  parent=svg`);
+        console.log(shape.getDetails().map((detail) => `  ${detail}`).join("\n"));
       }
     }
   } else if (command === "canvas") {
