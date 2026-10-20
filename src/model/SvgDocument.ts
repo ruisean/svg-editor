@@ -1,6 +1,9 @@
+import { Shape } from "./Shape.js";
+
 export class SvgDocument {
   private _width: number;
   private _height: number;
+  private readonly _shapes = new Map<string, Shape>();
 
   constructor(width = 800, height = 600) {
     if (!Number.isFinite(width) || width <= 0) {
@@ -22,6 +25,7 @@ export class SvgDocument {
   get height(): number {
     return this._height;
   }
+
   setSize(width: number, height: number): void {
     if (!Number.isFinite(width) || width <= 0) {
       throw new Error("width must be a positive number");
@@ -33,5 +37,21 @@ export class SvgDocument {
 
     this._width = width;
     this._height = height;
+  }
+
+  addShape(shape: Shape): void {
+    if (this._shapes.has(shape.id)) {
+      throw new Error(`id already exists: ${shape.id}`);
+    }
+
+    this._shapes.set(shape.id, shape);
+  }
+
+  getShape(id: string): Shape | undefined {
+    return this._shapes.get(id);
+  }
+
+  getShapes(): Shape[] {
+    return [...this._shapes.values()];
   }
 }
