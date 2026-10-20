@@ -19,7 +19,7 @@ terminal.on("line", (input) => {
   const args = parts.slice(1);
 
   if (command === "help") {
-    console.log("Commands: init [width] [height], help, exit");
+    console.log("Commands: init [width] [height], canvas [width] [height], help, exit");
   } else if (command === "init") {
     if (args.length !== 0 && args.length !== 2) {
       console.log("error: usage: init [width] [height]");
@@ -34,6 +34,21 @@ terminal.on("line", (input) => {
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
       }
+    }
+  } else if (command === "canvas") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length === 0) {
+      console.log(`canvas ${document.width}x${document.height}`);
+    } else if (args.length === 2) {
+      try {
+        document.setSize(Number(args[0]), Number(args[1]));
+        console.log(`canvas resized to ${document.width}x${document.height}`);
+      } catch (error) {
+        console.log(`error: ${(error as Error).message}`);
+      }
+    } else {
+      console.log("error: usage: canvas [width] [height]");
     }
   } else if (command === "exit") {
     terminal.close();
