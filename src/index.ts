@@ -20,7 +20,7 @@ terminal.on("line", (input) => {
   const args = parts.slice(1);
 
   if (command === "help") {
-    console.log("Commands: init [width] [height], canvas [width] [height], create rect <id> <x> <y> <width> <height> [fill], show <id>,help, exit");
+    console.log("Commands: init [width] [height], canvas [width] [height], create rect <id> <x> <y> <width> <height> [fill], show <id>,tree <id>, help, exit");
   } else if (command === "init") {
     if (args.length !== 0 && args.length !== 2) {
       console.log("error: usage: init [width] [height]");
@@ -58,6 +58,28 @@ terminal.on("line", (input) => {
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
       }
+    }
+  } else if (command === "tree") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length > 1) {
+      console.log("error: usage: tree [id]");
+    } else if (args.length === 1) {
+      const shape = document.getShape(args[0]);
+
+      if (shape === undefined) {
+        console.log(`error: no such shape: ${args[0]}`);
+      } else {
+        console.log(`${shape.type}#${shape.id}  ${shape.getDetails().join(" ")}`);
+      }
+    } else {
+      console.log(`svg (${document.width}x${document.height})`);
+      const shapes = document.getShapes();
+
+      shapes.forEach((shape, index) => {
+        const branch = index === shapes.length - 1 ? "└──" : "├──";
+        console.log(`${branch} ${shape.type}#${shape.id}  ${shape.getDetails().join(" ")}`);
+      });
     }
   } else if (command === "show") {
     if (document === null) {
