@@ -6,6 +6,7 @@ import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
 import { DeleteShapeCommand } from "./commands/DeleteShapeCommand.js";
 import { CreateShapeCommand } from "./commands/CreateShapeCommand.js";
 import { GroupShape } from "./model/shapes/GroupShape.js";
+import { AddToShapeCommand } from "./commands/AddToShapeCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -33,6 +34,7 @@ terminal.on("line", (input) => {
         create g <id>
         show <id>
         tree [id]
+        addto <gid> <id>
         move <id> <dx> <dy>
         undo
         redo
@@ -109,6 +111,21 @@ terminal.on("line", (input) => {
         }
       }
     }
+  } else if (command === "addto") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 2) {
+      console.log("error: usage: addto <gid> <id>");
+    } else {
+      try {
+        const message = history.execute(
+          new AddToShapeCommand(document, args[0], args[1]),
+        );
+        console.log(message);
+      } catch (error) {
+        console.log(`error: ${(error as Error).message}`);
+      }
+    }
   } else if (command === "move") {
     if (document === null) {
       console.log("error: no document. use 'init' or 'read' first");
@@ -152,15 +169,14 @@ terminal.on("line", (input) => {
       if (shape === undefined) {
         console.log(`error: no such shape: ${args[0]}`);
       } else {
-        console.log(`${shape.type}#${shape.id}  ${shape.getDetails().join(" ")}`);
+        console.log(shape.getTreeLines("", true).join("\n"));
       }
     } else {
       console.log(`svg (${document.width}x${document.height})`);
       const shapes = document.getShapes();
 
       shapes.forEach((shape, index) => {
-        const branch = index === shapes.length - 1 ? "└──" : "├──";
-        console.log(`${branch} ${shape.type}#${shape.id}  ${shape.getDetails().join(" ")}`);
+        console.log(shape.getTreeLines("", index === shapes.length - 1).join("\n"));
       });
     }
   } else if (command === "show") {
@@ -174,7 +190,7 @@ terminal.on("line", (input) => {
       if (shape === undefined) {
         console.log(`error: no such shape: ${args[0]}`);
       } else {
-        console.log(`${shape.type}#${shape.id}  parent=svg`);
+        console.log(`${shape.type}#${shape.id}  parent=${shape.parent === null ? "svg" : `g#${shape.parent.id}`}`);
         console.log(shape.getDetails().map((detail) => `  ${detail}`).join("\n"));
       }
     }

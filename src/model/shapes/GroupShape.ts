@@ -12,7 +12,29 @@ export class GroupShape extends Shape {
   }
 
   addChild(shape: Shape): void {
+    if (this._children.some((child) => child.id === shape.id)) {
+      throw new Error(`id already exists: ${shape.id}`);
+    }
     this._children.push(shape);
+    shape.setParent(this);
+  }
+
+  insertChildAt(index: number, shape: Shape): void {
+    if (this._children.some((child) => child.id === shape.id)) {
+      throw new Error(`id already exists: ${shape.id}`);
+    }
+    this._children.splice(index, 0, shape);
+    shape.setParent(this);
+  }
+
+  childIndex(id: string): number {
+    return this._children.findIndex((shape) => shape.id === id);
+  }
+
+  contains(id: string): boolean {
+    return this._children.some((child) =>
+      child.id === id || (child instanceof GroupShape && child.contains(id))
+    );
   }
 
   removeChild(id: string): Shape | undefined {
@@ -22,7 +44,9 @@ export class GroupShape extends Shape {
       return undefined;
     }
 
-    return this._children.splice(index, 1)[0];
+    const [shape] = this._children.splice(index, 1);
+    shape?.setParent(null);
+    return shape;
   }
 
   move(dx: number, dy: number): void {
@@ -37,6 +61,18 @@ export class GroupShape extends Shape {
 
   getDetails(): string[] {
     return [`children=${this._children.length}`];
+  }
+
+  getTreeLines(prefix = "", isLast = true): string[] {
+    const branch = isLast ? "└──" : "├──";
+    const lines = [`${prefix}${branch} g#${this.id}  ${this.getDetails().join(" ")}`];
+    const childPrefix = prefix + (isLast ? "    " : "│   ");
+
+    this._children.forEach((child, index) => {
+      lines.push(...child.getTreeLines(childPrefix, index === this._children.length - 1));
+    });
+
+    return lines;
   }
 
   toSvg(): string {
