@@ -4,6 +4,7 @@ import { RectShape } from "./model/shapes/RectShape.js";
 import { CommandHistory } from "./commands/CommandHistory.js";
 import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
 import { DeleteShapeCommand } from "./commands/DeleteShapeCommand.js";
+import { CreateShapeCommand } from "./commands/CreateShapeCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -70,7 +71,7 @@ terminal.on("line", (input) => {
           args[6],
         );
         document.addShape(shape);
-        console.log(`rect#${shape.id} created`);
+        console.log(history.execute(new CreateShapeCommand(document, shape)));
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
       }
