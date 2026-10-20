@@ -1,6 +1,8 @@
 import * as readline from "node:readline";
 import { SvgDocument } from "./model/SvgDocument.js";
 import { RectShape } from "./model/shapes/RectShape.js";
+import { CommandHistory } from "./commands/CommandHistory.js";
+import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -8,6 +10,7 @@ const terminal = readline.createInterface({
 });
 
 let document: SvgDocument | null = null;
+const history = new CommandHistory();
 
 console.log("svg-editor 0.1 — type 'help' for commands");
 
@@ -20,7 +23,17 @@ terminal.on("line", (input) => {
   const args = parts.slice(1);
 
   if (command === "help") {
-    console.log("Commands: init [width] [height], canvas [width] [height], create rect <id> <x> <y> <width> <height> [fill], show <id>,tree <id>, help, exit");
+    console.log(`Commands:
+        init [width] [height]
+        canvas [width] [height]
+        create rect <id> <x> <y> <width> <height> [fill]
+        show <id>
+        tree [id]
+        move <id> <dx> <dy>
+        undo
+        redo
+        help
+        exit`);
   } else if (command === "init") {
     if (args.length !== 0 && args.length !== 2) {
       console.log("error: usage: init [width] [height]");
@@ -31,6 +44,7 @@ terminal.on("line", (input) => {
       try {
         const newDocument = new SvgDocument(width, height);
         document = newDocument;
+        history.reset();
         console.log(`canvas ${document.width}x${document.height} created`);
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
@@ -55,6 +69,38 @@ terminal.on("line", (input) => {
         );
         document.addShape(shape);
         console.log(`rect#${shape.id} created`);
+      } catch (error) {
+        console.log(`error: ${(error as Error).message}`);
+      }
+    }
+  } else if (command === "move") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 3) {
+      console.log("error: usage: move <id> <dx> <dy>");
+    } else {
+      const shape = document.getShape(args[0]);
+
+      if (shape === undefined) {
+        console.log(`error: no such shape: ${args[0]}`);
+      } else {
+        try {
+          const message = history.execute(
+            new MoveShapeCommand(shape, Number(args[1]), Number(args[2])),
+          );
+          console.log(message);
+        } catch (error) {
+          console.log(`error: ${(error as Error).message}`);
+        }
+      }
+    }
+  } else if (command === "undo" || command === "redo") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else {
+      try {
+        const message = command === "undo" ? history.undo() : history.redo();
+        console.log(message);
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
       }
@@ -104,6 +150,7 @@ terminal.on("line", (input) => {
     } else if (args.length === 2) {
       try {
         document.setSize(Number(args[0]), Number(args[1]));
+        history.markIoOperation();
         console.log(`canvas resized to ${document.width}x${document.height}`);
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);

@@ -14,4 +14,6 @@ export abstract class Shape {
   abstract toSvg(): string;
 
   abstract getDetails(): string[];
+
+  abstract move(dx: number, dy: number): void;
 }
