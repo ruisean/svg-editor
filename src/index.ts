@@ -5,6 +5,7 @@ import { CommandHistory } from "./commands/CommandHistory.js";
 import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
 import { DeleteShapeCommand } from "./commands/DeleteShapeCommand.js";
 import { CreateShapeCommand } from "./commands/CreateShapeCommand.js";
+import { GroupShape } from "./model/shapes/GroupShape.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -29,6 +30,7 @@ terminal.on("line", (input) => {
         init [width] [height]
         canvas [width] [height]
         create rect <id> <x> <y> <width> <height> [fill]
+        create g <id>
         show <id>
         tree [id]
         move <id> <dx> <dy>
@@ -56,6 +58,17 @@ terminal.on("line", (input) => {
   } else if (command === "create") {
     if (document === null) {
       console.log("error: no document. use 'init' or 'read' first");
+    } else if (args[0] === "g") {
+      if (args.length !== 2) {
+        console.log("error: usage: create g <id>");
+      } else {
+        try {
+          const group = new GroupShape(args[1]);
+          console.log(history.execute(new CreateShapeCommand(document, group)));
+        } catch (error) {
+          console.log(`error: ${(error as Error).message}`);
+        }
+      }
     } else if (args[0] !== "rect") {
       console.log(`error: unknown shape type: ${args[0] ?? ""}`);
     } else if (args.length !== 6 && args.length !== 7) {
@@ -70,7 +83,6 @@ terminal.on("line", (input) => {
           Number(args[5]),
           args[6],
         );
-        document.addShape(shape);
         console.log(history.execute(new CreateShapeCommand(document, shape)));
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
