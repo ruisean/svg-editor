@@ -8,6 +8,8 @@ import { CreateShapeCommand } from "./commands/CreateShapeCommand.js";
 import { GroupShape } from "./model/shapes/GroupShape.js";
 import { AddToShapeCommand } from "./commands/AddToShapeCommand.js";
 import { GroupShapesCommand } from "./commands/GroupShapesCommand.js";
+import { UngroupShapesCommand } from "./commands/UngroupShapesCommand.js";
+import { ScaleShapeCommand } from "./commands/ScaleShapeCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -41,6 +43,8 @@ terminal.on("line", (input) => {
         redo
         delete <id>
         group <newGid> <id1> <id2>...
+        ungroup <gid>
+        scale <id> <factor>
         help
         exit`);
   } else if (command === "init") {
@@ -113,6 +117,21 @@ terminal.on("line", (input) => {
         }
       }
     }
+  } else if (command === "ungroup") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 1) {
+      console.log("error: usage: ungroup <gid>");
+    } else {
+      try {
+        const message = history.execute(
+          new UngroupShapesCommand(document, args[0]),
+        );
+        console.log(message);
+      } catch (error) {
+        console.log(`error: ${(error as Error).message}`);
+      }
+    }
   } else if (command === "group") {
     if (document === null) {
       console.log("error: no document. use 'init' or 'read' first");
@@ -141,6 +160,27 @@ terminal.on("line", (input) => {
         console.log(message);
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
+      }
+    }
+  } else if (command === "scale") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 2) {
+      console.log("error: usage: scale <id> <factor>");
+    } else {
+      const shape = document.getShape(args[0]);
+
+      if (shape === undefined) {
+        console.log(`error: no such shape: ${args[0]}`);
+      } else {
+        try {
+          const message = history.execute(
+            new ScaleShapeCommand(shape, Number(args[1])),
+          );
+          console.log(message);
+        } catch (error) {
+          console.log(`error: ${(error as Error).message}`);
+        }
       }
     }
   } else if (command === "move") {

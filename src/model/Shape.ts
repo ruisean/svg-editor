@@ -29,6 +29,8 @@ export abstract class Shape {
 
   abstract move(dx: number, dy: number): void;
 
+  abstract scale(factor: number): void;
+  
   getTreeLines(prefix = "", isLast = true): string[] {
     const branch = isLast ? "└──" : "├──";
     return [`${prefix}${branch} ${this.type}#${this.id}  ${this.getDetails().join(" ")}`];

@@ -12,29 +12,7 @@ export class GroupShape extends Shape {
   }
 
   addChild(shape: Shape): void {
-    if (this._children.some((child) => child.id === shape.id)) {
-      throw new Error(`id already exists: ${shape.id}`);
-    }
     this._children.push(shape);
-    shape.setParent(this);
-  }
-
-  insertChildAt(index: number, shape: Shape): void {
-    if (this._children.some((child) => child.id === shape.id)) {
-      throw new Error(`id already exists: ${shape.id}`);
-    }
-    this._children.splice(index, 0, shape);
-    shape.setParent(this);
-  }
-
-  childIndex(id: string): number {
-    return this._children.findIndex((shape) => shape.id === id);
-  }
-
-  contains(id: string): boolean {
-    return this._children.some((child) =>
-      child.id === id || (child instanceof GroupShape && child.contains(id))
-    );
   }
 
   removeChild(id: string): Shape | undefined {
@@ -44,9 +22,7 @@ export class GroupShape extends Shape {
       return undefined;
     }
 
-    const [shape] = this._children.splice(index, 1);
-    shape?.setParent(null);
-    return shape;
+    return this._children.splice(index, 1)[0];
   }
 
   move(dx: number, dy: number): void {
@@ -58,21 +34,18 @@ export class GroupShape extends Shape {
       child.move(dx, dy);
     }
   }
-
-  getDetails(): string[] {
-    return [`children=${this._children.length}`];
+  
+  scale(factor: number): void {
+  if (!Number.isFinite(factor) || factor <= 0) {
+    throw new Error("scale factor must be positive");
   }
 
-  getTreeLines(prefix = "", isLast = true): string[] {
-    const branch = isLast ? "└──" : "├──";
-    const lines = [`${prefix}${branch} g#${this.id}  ${this.getDetails().join(" ")}`];
-    const childPrefix = prefix + (isLast ? "    " : "│   ");
-
-    this._children.forEach((child, index) => {
-      lines.push(...child.getTreeLines(childPrefix, index === this._children.length - 1));
-    });
-
-    return lines;
+  for (const child of this._children) {
+    child.scale(factor);
+  }
+}
+  getDetails(): string[] {
+    return [`children=${this._children.length}`];
   }
 
   toSvg(): string {
