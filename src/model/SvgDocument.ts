@@ -116,6 +116,42 @@ export class SvgDocument {
     parent.insertChildAt(location.index, shape);
   }
 
+  moveToFront(shapeId: string): ShapeLocation {
+    const shape = this._shapes.get(shapeId);
+    if (shape === undefined) throw new Error(`no such shape: ${shapeId}`);
+
+    const location = this.locate(shape);
+    this.detach(shape, location.index);
+    if (location.parentId === null) {
+      this._rootShapes.push(shape);
+    } else {
+      const parent = this._shapes.get(location.parentId);
+      if (!(parent instanceof GroupShape)) {
+        throw new Error(`not a container: ${location.parentId}`);
+      }
+      parent.addChild(shape);
+    }
+    return location;
+  }
+
+  moveToBack(shapeId: string): ShapeLocation {
+    const shape = this._shapes.get(shapeId);
+    if (shape === undefined) throw new Error(`no such shape: ${shapeId}`);
+
+    const location = this.locate(shape);
+    this.detach(shape, location.index);
+    if (location.parentId === null) {
+      this._rootShapes.unshift(shape);
+    } else {
+      const parent = this._shapes.get(location.parentId);
+      if (!(parent instanceof GroupShape)) {
+        throw new Error(`not a container: ${location.parentId}`);
+      }
+      parent.insertChildAt(0, shape);
+    }
+    return location;
+  }
+
   restoreDeleted(shape: Shape, location: ShapeLocation): void {
     const parent = location.parentId === null ? null : this._shapes.get(location.parentId);
     if (location.parentId !== null && !(parent instanceof GroupShape)) {

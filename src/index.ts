@@ -10,6 +10,7 @@ import { GroupShapesCommand } from "./commands/GroupShapesCommand.js";
 import { UngroupShapesCommand } from "./commands/UngroupShapesCommand.js";
 import { ScaleShapeCommand } from "./commands/ScaleShapeCommand.js";
 import { SetShapeAttributeCommand } from "./commands/SetShapeAttributeCommand.js";
+import { ReorderShapeCommand } from "./commands/ReorderShapeCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -100,6 +101,8 @@ terminal.on("line", (input) => {
         ungroup <gid>
         scale <id> <factor>
         set <id> <attr> <value>
+        front <id>
+        back <id>
         help
         exit`);
   } else if (command === "init") {
@@ -216,6 +219,21 @@ terminal.on("line", (input) => {
         } catch (error) {
           console.log(`error: ${(error as Error).message}`);
         }
+      }
+    }
+  } else if (command === "front" || command === "back") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 1) {
+      console.log(`error: usage: ${command} <id>`);
+    } else {
+      try {
+        const message = history.execute(
+          new ReorderShapeCommand(document, args[0], command),
+        );
+        console.log(message);
+      } catch (error) {
+        console.log(`error: ${(error as Error).message}`);
       }
     }
   } else if (command === "scale") {

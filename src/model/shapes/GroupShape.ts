@@ -13,6 +13,15 @@ export class GroupShape extends Shape {
 
   addChild(shape: Shape): void {
     this._children.push(shape);
+    shape.setParent(this);
+  }
+
+  insertChildAt(index: number, shape: Shape): void {
+    if (!Number.isInteger(index) || index < 0 || index > this._children.length) {
+      throw new Error("invalid child index");
+    }
+    this._children.splice(index, 0, shape);
+    shape.setParent(this);
   }
 
   removeChild(id: string): Shape | undefined {
@@ -22,7 +31,23 @@ export class GroupShape extends Shape {
       return undefined;
     }
 
-    return this._children.splice(index, 1)[0];
+    const [shape] = this._children.splice(index, 1);
+    shape?.setParent(null);
+    return shape;
+  }
+
+  childIndex(id: string): number {
+    const index = this._children.findIndex((shape) => shape.id === id);
+    if (index === -1) throw new Error(`no such child: ${id}`);
+    return index;
+  }
+
+  contains(id: string): boolean {
+    return this._children.some(
+      (child) =>
+        child.id === id ||
+        (child instanceof GroupShape && child.contains(id)),
+    );
   }
 
   move(dx: number, dy: number): void {
@@ -36,14 +61,15 @@ export class GroupShape extends Shape {
   }
   
   scale(factor: number): void {
-  if (!Number.isFinite(factor) || factor <= 0) {
-    throw new Error("scale factor must be positive");
+    if (!Number.isFinite(factor) || factor <= 0) {
+      throw new Error("scale factor must be positive");
+    }
+
+    for (const child of this._children) {
+      child.scale(factor);
+    }
   }
 
-  for (const child of this._children) {
-    child.scale(factor);
-  }
-}
   getDetails(): string[] {
     return [`children=${this._children.length}`];
   }
