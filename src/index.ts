@@ -84,12 +84,12 @@ terminal.on("line", (input) => {
     console.log(`Commands:
         init [width] [height]
         canvas [width] [height]
-        create rect <id> <x> <y> <width> <height> [fill]
-        create circle <id> <cx> <cy> <r> [fill]
-        create ellipse <id> <cx> <cy> <rx> <ry> [fill]
-        create line <id> <x1> <y1> <x2> <y2> [stroke]
-        create text <id> <x> <y> "content"
-        create g <id>
+        create rect <id> <x> <y> <width> <height> [fill] [in <containerId>]
+        create circle <id> <cx> <cy> <r> [fill] [in <containerId>]
+        create ellipse <id> <cx> <cy> <rx> <ry> [fill] [in <containerId>]
+        create line <id> <x1> <y1> <x2> <y2> [stroke] [in <containerId>]
+        create text <id> <x> <y> "content" [in <containerId>]
+        create g <id> [in <containerId>]
         show <id>
         tree [id]
         addto <gid> <id>
@@ -128,8 +128,22 @@ terminal.on("line", (input) => {
       console.log("error: usage: create <type> <id> [params...]");
     } else {
       try {
-        const shape = shapeFactory.create(args[0], args.slice(1));
-        console.log(history.execute(new CreateShapeCommand(document, shape)));
+        const type = args[0];
+        const shapeArgs = args.slice(1);
+        let containerId: string | undefined;
+
+        if (shapeArgs.length >= 2 && shapeArgs[shapeArgs.length - 2] === "in") {
+          containerId = shapeArgs[shapeArgs.length - 1];
+          shapeArgs.splice(-2);
+          if (containerId === "") {
+            throw new Error("usage: create <type> <id> [params...] in <containerId>");
+          }
+        }
+
+        const shape = shapeFactory.create(type, shapeArgs);
+        console.log(
+          history.execute(new CreateShapeCommand(document, shape, containerId)),
+        );
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
       }
