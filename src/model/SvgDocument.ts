@@ -60,6 +60,17 @@ export class SvgDocument {
     return [...this._rootShapes];
   }
 
+  toSvg(): string {
+    const shapes = this._rootShapes.map((shape) => shape.toSvg()).join("\n");
+    return [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${this._width}" height="${this._height}" viewBox="0 0 ${this._width} ${this._height}">`,
+      shapes,
+      "</svg>",
+      "",
+    ].join("\n");
+  }
+
   removeShape(id: string): Shape | undefined {
     const shape = this._shapes.get(id);
 

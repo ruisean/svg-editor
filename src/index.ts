@@ -1,4 +1,5 @@
 import * as readline from "node:readline";
+import { writeFileSync } from "node:fs";
 import { SvgDocument } from "./model/SvgDocument.js";
 import { CommandHistory } from "./commands/CommandHistory.js";
 import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
@@ -18,6 +19,7 @@ const terminal = readline.createInterface({
 });
 
 let document: SvgDocument | null = null;
+let currentFilePath: string | null = null;
 const history = new CommandHistory();
 const shapeFactory = new ShapeFactory();
 
@@ -83,6 +85,7 @@ terminal.on("line", (input) => {
   if (command === "help") {
     console.log(`Commands:
         init [width] [height]
+        save [file.svg]
         canvas [width] [height]
         create rect <id> <x> <y> <width> <height> [fill] [in <containerId>]
         create circle <id> <cx> <cy> <r> [fill] [in <containerId>]
@@ -115,6 +118,7 @@ terminal.on("line", (input) => {
       try {
         const newDocument = new SvgDocument(width, height);
         document = newDocument;
+        currentFilePath = null;
         history.reset();
         console.log(`canvas ${document.width}x${document.height} created`);
       } catch (error) {
@@ -354,6 +358,26 @@ terminal.on("line", (input) => {
       }
     } else {
       console.log("error: usage: canvas [width] [height]");
+    }
+  } else if (command === "save") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length > 1) {
+      console.log("error: usage: save [file.svg]");
+    } else {
+      const filePath = args[0] ?? currentFilePath;
+      if (filePath === null || filePath === undefined) {
+        console.log("error: specify a file path with 'save <file.svg>'");
+      } else {
+        try {
+          writeFileSync(filePath, document.toSvg(), "utf8");
+          currentFilePath = filePath;
+          history.markIoOperation();
+          console.log(`saved ${filePath}`);
+        } catch (error) {
+          console.log(`error: ${(error as Error).message}`);
+        }
+      }
     }
   } else if (command === "exit") {
     terminal.close();
