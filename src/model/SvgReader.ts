@@ -1,11 +1,7 @@
-import { CircleShape } from "./shapes/CircleShape.js";
-import { EllipseShape } from "./shapes/EllipseShape.js";
 import { GroupShape } from "./shapes/GroupShape.js";
-import { LineShape } from "./shapes/LineShape.js";
-import { RectShape } from "./shapes/RectShape.js";
-import { Shape } from "./Shape.js";
+import { ShapeFactory } from "./ShapeFactory.js";
 import { SvgDocument } from "./SvgDocument.js";
-import { TextShape } from "./shapes/TextShape.js";
+import { Shape } from "./Shape.js";
 
 type XmlNode = {
   name: string;
@@ -19,6 +15,8 @@ export type SvgReadResult = {
 };
 
 export class SvgReader {
+  private static readonly shapeFactory = new ShapeFactory();
+
   static parse(source: string): SvgReadResult {
     const root = parseXml(source);
     if (root.name !== "svg") throw new Error("root element must be <svg>");
@@ -49,7 +47,14 @@ export class SvgReader {
         continue;
       }
       document.addShape(
-        this.createShape(child, usedIds, reservedIds, counters, warnings),
+        this.createShape(
+          child,
+          usedIds,
+          reservedIds,
+          counters,
+          warnings,
+          resolveStyle(root.attributes, {}),
+        ),
       );
     }
 
@@ -62,97 +67,48 @@ export class SvgReader {
     reservedIds: Set<string>,
     counters: Map<string, number>,
     warnings: string[],
+    inheritedStyle: Record<string, string>,
   ): Shape {
     if (node.attributes.transform !== undefined) {
       throw new Error("SVG transform attributes are not supported yet");
     }
 
     const id = this.getId(node, usedIds, reservedIds, counters, warnings);
-    const style = parseStyle(node.attributes.style);
-    const fill = node.attributes.fill ?? style.fill;
-    const stroke = node.attributes.stroke ?? style.stroke;
-    const strokeWidth = node.attributes["stroke-width"] ?? style["stroke-width"];
-    let shape: Shape;
+    const effectiveStyle = resolveStyle(node.attributes, inheritedStyle);
+    const attributes = { ...node.attributes, ...effectiveStyle, id };
+    const textContent = node.name === "text" ? this.readText(node) : "";
+    const shape = this.shapeFactory.createFromSvg(
+      node.name,
+      attributes,
+      textContent,
+    );
 
-    switch (node.name) {
-      case "g": {
-        const group = new GroupShape(id);
-        for (const child of node.children) {
-          if (typeof child === "string") {
-            if (child.trim() !== "") {
-              throw new Error("unexpected text inside <g>");
-            }
-            continue;
-          }
-          group.addChild(
-            this.createShape(child, usedIds, reservedIds, counters, warnings),
-          );
+    if (shape instanceof GroupShape) {
+      for (const child of node.children) {
+        if (typeof child === "string") {
+          if (child.trim() !== "") throw new Error("unexpected text inside <g>");
+          continue;
         }
-        shape = group;
-        break;
+        shape.addChild(
+          this.createShape(
+            child,
+            usedIds,
+            reservedIds,
+            counters,
+            warnings,
+            effectiveStyle,
+          ),
+        );
       }
-      case "rect":
-        shape = new RectShape(
-          id,
-          numberAttribute(node, "x", 0),
-          numberAttribute(node, "y", 0),
-          numberAttribute(node, "width"),
-          numberAttribute(node, "height"),
-          fill,
-        );
-        break;
-      case "circle":
-        shape = new CircleShape(
-          id,
-          numberAttribute(node, "cx", 0),
-          numberAttribute(node, "cy", 0),
-          numberAttribute(node, "r"),
-          fill,
-        );
-        break;
-      case "ellipse":
-        shape = new EllipseShape(
-          id,
-          numberAttribute(node, "cx", 0),
-          numberAttribute(node, "cy", 0),
-          numberAttribute(node, "rx"),
-          numberAttribute(node, "ry"),
-          fill,
-        );
-        break;
-      case "line":
-        shape = new LineShape(
-          id,
-          numberAttribute(node, "x1", 0),
-          numberAttribute(node, "y1", 0),
-          numberAttribute(node, "x2", 0),
-          numberAttribute(node, "y2", 0),
-          stroke,
-        );
-        break;
-      case "text": {
-        if (node.children.some((child) => typeof child !== "string")) {
-          throw new Error("nested elements inside <text> are not supported");
-        }
-        const text = node.children.join("");
-        shape = new TextShape(
-          id,
-          numberAttribute(node, "x", 0),
-          numberAttribute(node, "y", 0),
-          text,
-        );
-        break;
-      }
-      default:
-        throw new Error(`unsupported SVG element: <${node.name}>`);
     }
-
-    if (fill !== undefined && !(shape instanceof RectShape || shape instanceof CircleShape || shape instanceof EllipseShape || shape instanceof TextShape)) {
-      throw new Error(`<${node.name}> does not support fill`);
-    }
-    if (stroke !== undefined) shape.setAttribute("stroke", stroke);
-    if (strokeWidth !== undefined) shape.setAttribute("stroke-width", strokeWidth);
     return shape;
+  }
+
+  private static readText(node: XmlNode): string {
+    if (node.children.some((child) => typeof child !== "string")) {
+      throw new Error("nested elements inside <text> are not supported");
+    }
+    return node.children.join("");
   }
 
   private static getId(
@@ -197,22 +153,24 @@ function collectDeclaredIds(root: XmlNode): Set<string> {
   return result;
 }
 
-function numberAttribute(node: XmlNode, name: string, fallback?: number): number {
-  const rawValue = node.attributes[name];
-  if (rawValue === undefined && fallback !== undefined) return fallback;
-  if (rawValue === undefined) throw new Error(`missing ${name} on <${node.name}>`);
-
-  const value = parseLength(rawValue, name, Number.NaN);
-  if (!Number.isFinite(value)) throw new Error(`invalid ${name} on <${node.name}>`);
-  return value;
-}
-
 function parseLength(value: string | undefined, name: string, fallback: number): number {
   if (value === undefined) return fallback;
   const match = value.trim().match(/^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(?:px)?$/i);
   if (match === null) throw new Error(`unsupported SVG ${name}: ${value}`);
   const result = Number(match[1]);
   if (!Number.isFinite(result)) throw new Error(`invalid SVG ${name}`);
+  return result;
+}
+
+function resolveStyle(
+  attributes: Record<string, string>,
+  inherited: Record<string, string>,
+): Record<string, string> {
+  const result = { ...inherited };
+  for (const name of ["fill", "stroke", "stroke-width"]) {
+    if (attributes[name] !== undefined) result[name] = attributes[name];
+  }
+  Object.assign(result, parseStyle(attributes.style));
   return result;
 }
 
