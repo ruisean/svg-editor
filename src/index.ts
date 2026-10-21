@@ -1,5 +1,5 @@
 import * as readline from "node:readline";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { SvgDocument } from "./model/SvgDocument.js";
 import { CommandHistory } from "./commands/CommandHistory.js";
 import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
@@ -12,6 +12,7 @@ import { UngroupShapesCommand } from "./commands/UngroupShapesCommand.js";
 import { ScaleShapeCommand } from "./commands/ScaleShapeCommand.js";
 import { SetShapeAttributeCommand } from "./commands/SetShapeAttributeCommand.js";
 import { ReorderShapeCommand } from "./commands/ReorderShapeCommand.js";
+import { SvgReader } from "./model/SvgReader.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -85,6 +86,7 @@ terminal.on("line", (input) => {
   if (command === "help") {
     console.log(`Commands:
         init [width] [height]
+        read <file.svg>
         save [file.svg]
         canvas [width] [height]
         create rect <id> <x> <y> <width> <height> [fill] [in <containerId>]
@@ -377,6 +379,22 @@ terminal.on("line", (input) => {
         } catch (error) {
           console.log(`error: ${(error as Error).message}`);
         }
+      }
+    }
+  } else if (command === "read") {
+    if (args.length !== 1) {
+      console.log("error: usage: read <file.svg>");
+    } else {
+      try {
+        const source = readFileSync(args[0], "utf8");
+        const result = SvgReader.parse(source);
+        document = result.document;
+        currentFilePath = args[0];
+        history.reset();
+        for (const warning of result.warnings) console.log(warning);
+        console.log(`read ${args[0]} (${document.width}x${document.height})`);
+      } catch (error) {
+        console.log(`error: ${(error as Error).message}`);
       }
     }
   } else if (command === "exit") {
