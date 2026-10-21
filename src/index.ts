@@ -36,6 +36,7 @@ terminal.on("line", (input) => {
         canvas [width] [height]
         create rect <id> <x> <y> <width> <height> [fill]
         create circle <id> <cx> <cy> <r> [fill]
+        create ellipse <id> <cx> <cy> <rx> <ry> [fill]
         create g <id>
         show <id>
         tree [id]

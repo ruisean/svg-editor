@@ -1,6 +1,7 @@
 import { Shape } from "./Shape.js";
 import { RectShape } from "./shapes/RectShape.js";
 import { CircleShape } from "./shapes/CircleShape.js";
+import { EllipseShape } from "./shapes/EllipseShape.js";
 import { GroupShape } from "./shapes/GroupShape.js";
 
 export class ShapeFactory {
@@ -10,6 +11,8 @@ export class ShapeFactory {
         return this.createRect(args);
       case "circle":
         return this.createCircle(args);
+      case "ellipse":
+        return this.createEllipse(args);
       case "g":
         return this.createGroup(args);
       default:
@@ -43,6 +46,21 @@ export class ShapeFactory {
       Number(args[2]),
       Number(args[3]),
       args[4],
+    );
+  }
+
+  private createEllipse(args: string[]): EllipseShape {
+    if (args.length !== 5 && args.length !== 6) {
+      throw new Error("usage: create ellipse <id> <cx> <cy> <rx> <ry> [fill]");
+    }
+
+    return new EllipseShape(
+      args[0],
+      Number(args[1]),
+      Number(args[2]),
+      Number(args[3]),
+      Number(args[4]),
+      args[5],
     );
   }
 
