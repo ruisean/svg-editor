@@ -37,6 +37,7 @@ terminal.on("line", (input) => {
         create rect <id> <x> <y> <width> <height> [fill]
         create circle <id> <cx> <cy> <r> [fill]
         create ellipse <id> <cx> <cy> <rx> <ry> [fill]
+        create line <id> <x1> <y1> <x2> <y2> [stroke]
         create g <id>
         show <id>
         tree [id]

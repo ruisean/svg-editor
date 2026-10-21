@@ -2,6 +2,7 @@ import { Shape } from "./Shape.js";
 import { RectShape } from "./shapes/RectShape.js";
 import { CircleShape } from "./shapes/CircleShape.js";
 import { EllipseShape } from "./shapes/EllipseShape.js";
+import { LineShape } from "./shapes/LineShape.js";
 import { GroupShape } from "./shapes/GroupShape.js";
 
 export class ShapeFactory {
@@ -13,6 +14,8 @@ export class ShapeFactory {
         return this.createCircle(args);
       case "ellipse":
         return this.createEllipse(args);
+      case "line":
+        return this.createLine(args);
       case "g":
         return this.createGroup(args);
       default:
@@ -55,6 +58,21 @@ export class ShapeFactory {
     }
 
     return new EllipseShape(
+      args[0],
+      Number(args[1]),
+      Number(args[2]),
+      Number(args[3]),
+      Number(args[4]),
+      args[5],
+    );
+  }
+
+  private createLine(args: string[]): LineShape {
+    if (args.length !== 5 && args.length !== 6) {
+      throw new Error("usage: create line <id> <x1> <y1> <x2> <y2> [stroke]");
+    }
+
+    return new LineShape(
       args[0],
       Number(args[1]),
       Number(args[2]),
