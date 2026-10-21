@@ -1,15 +1,15 @@
 import * as readline from "node:readline";
 import { SvgDocument } from "./model/SvgDocument.js";
-import { RectShape } from "./model/shapes/RectShape.js";
 import { CommandHistory } from "./commands/CommandHistory.js";
 import { MoveShapeCommand } from "./commands/MoveShapeCommand.js";
 import { DeleteShapeCommand } from "./commands/DeleteShapeCommand.js";
 import { CreateShapeCommand } from "./commands/CreateShapeCommand.js";
-import { GroupShape } from "./model/shapes/GroupShape.js";
+import { ShapeFactory } from "./model/ShapeFactory.js";
 import { AddToShapeCommand } from "./commands/AddToShapeCommand.js";
 import { GroupShapesCommand } from "./commands/GroupShapesCommand.js";
 import { UngroupShapesCommand } from "./commands/UngroupShapesCommand.js";
 import { ScaleShapeCommand } from "./commands/ScaleShapeCommand.js";
+import { SetShapeAttributeCommand } from "./commands/SetShapeAttributeCommand.js";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -18,6 +18,7 @@ const terminal = readline.createInterface({
 
 let document: SvgDocument | null = null;
 const history = new CommandHistory();
+const shapeFactory = new ShapeFactory();
 
 console.log("svg-editor 0.1 — type 'help' for commands");
 
@@ -34,6 +35,7 @@ terminal.on("line", (input) => {
         init [width] [height]
         canvas [width] [height]
         create rect <id> <x> <y> <width> <height> [fill]
+        create circle <id> <cx> <cy> <r> [fill]
         create g <id>
         show <id>
         tree [id]
@@ -45,6 +47,7 @@ terminal.on("line", (input) => {
         group <newGid> <id1> <id2>...
         ungroup <gid>
         scale <id> <factor>
+        set <id> <attr> <value>
         help
         exit`);
   } else if (command === "init") {
@@ -66,31 +69,11 @@ terminal.on("line", (input) => {
   } else if (command === "create") {
     if (document === null) {
       console.log("error: no document. use 'init' or 'read' first");
-    } else if (args[0] === "g") {
-      if (args.length !== 2) {
-        console.log("error: usage: create g <id>");
-      } else {
-        try {
-          const group = new GroupShape(args[1]);
-          console.log(history.execute(new CreateShapeCommand(document, group)));
-        } catch (error) {
-          console.log(`error: ${(error as Error).message}`);
-        }
-      }
-    } else if (args[0] !== "rect") {
-      console.log(`error: unknown shape type: ${args[0] ?? ""}`);
-    } else if (args.length !== 6 && args.length !== 7) {
-      console.log("error: usage: create rect <id> <x> <y> <width> <height> [fill]");
+    } else if (args.length === 0) {
+      console.log("error: usage: create <type> <id> [params...]");
     } else {
       try {
-        const shape = new RectShape(
-          args[1],
-          Number(args[2]),
-          Number(args[3]),
-          Number(args[4]),
-          Number(args[5]),
-          args[6],
-        );
+        const shape = shapeFactory.create(args[0], args.slice(1));
         console.log(history.execute(new CreateShapeCommand(document, shape)));
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
@@ -160,6 +143,27 @@ terminal.on("line", (input) => {
         console.log(message);
       } catch (error) {
         console.log(`error: ${(error as Error).message}`);
+      }
+    }
+  } else if (command === "set") {
+    if (document === null) {
+      console.log("error: no document. use 'init' or 'read' first");
+    } else if (args.length !== 3) {
+      console.log("error: usage: set <id> <attr> <value>");
+    } else {
+      const shape = document.getShape(args[0]);
+
+      if (shape === undefined) {
+        console.log(`error: no such shape: ${args[0]}`);
+      } else {
+        try {
+          const message = history.execute(
+            new SetShapeAttributeCommand(shape, args[1], args[2]),
+          );
+          console.log(message);
+        } catch (error) {
+          console.log(`error: ${(error as Error).message}`);
+        }
       }
     }
   } else if (command === "scale") {
