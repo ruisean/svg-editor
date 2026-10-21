@@ -3,6 +3,7 @@ import { RectShape } from "./shapes/RectShape.js";
 import { CircleShape } from "./shapes/CircleShape.js";
 import { EllipseShape } from "./shapes/EllipseShape.js";
 import { LineShape } from "./shapes/LineShape.js";
+import { TextShape } from "./shapes/TextShape.js";
 import { GroupShape } from "./shapes/GroupShape.js";
 
 export class ShapeFactory {
@@ -16,6 +17,8 @@ export class ShapeFactory {
         return this.createEllipse(args);
       case "line":
         return this.createLine(args);
+      case "text":
+        return this.createText(args);
       case "g":
         return this.createGroup(args);
       default:
@@ -80,6 +83,14 @@ export class ShapeFactory {
       Number(args[4]),
       args[5],
     );
+  }
+
+  private createText(args: string[]): TextShape {
+    if (args.length !== 4) {
+      throw new Error('usage: create text <id> <x> <y> "content"');
+    }
+
+    return new TextShape(args[0], Number(args[1]), Number(args[2]), args[3]);
   }
 
   private createGroup(args: string[]): GroupShape {

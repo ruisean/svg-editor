@@ -20,13 +20,62 @@ let document: SvgDocument | null = null;
 const history = new CommandHistory();
 const shapeFactory = new ShapeFactory();
 
+function tokenize(input: string): string[] {
+  const tokens: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  let tokenStarted = false;
+
+  for (let index = 0; index < input.length; index += 1) {
+    const character = input[index];
+
+    if (character === "\\" && inQuotes && index + 1 < input.length) {
+      const nextCharacter = input[index + 1];
+      if (nextCharacter === '"' || nextCharacter === "\\") {
+        current += nextCharacter;
+        index += 1;
+        tokenStarted = true;
+        continue;
+      }
+    }
+
+    if (character === '"') {
+      inQuotes = !inQuotes;
+      tokenStarted = true;
+    } else if (/\s/.test(character) && !inQuotes) {
+      if (tokenStarted) {
+        tokens.push(current);
+        current = "";
+        tokenStarted = false;
+      }
+    } else {
+      current += character;
+      tokenStarted = true;
+    }
+  }
+
+  if (inQuotes) {
+    throw new Error("unterminated quoted argument");
+  }
+  if (tokenStarted) tokens.push(current);
+
+  return tokens;
+}
+
 console.log("svg-editor 0.1 — type 'help' for commands");
 
 terminal.setPrompt("svg> ");
 terminal.prompt();
 
 terminal.on("line", (input) => {
-  const parts = input.trim().split(/\s+/);
+  let parts: string[];
+  try {
+    parts = tokenize(input);
+  } catch (error) {
+    console.log(`error: ${(error as Error).message}`);
+    terminal.prompt();
+    return;
+  }
   const command = parts[0];
   const args = parts.slice(1);
 
@@ -38,6 +87,7 @@ terminal.on("line", (input) => {
         create circle <id> <cx> <cy> <r> [fill]
         create ellipse <id> <cx> <cy> <rx> <ry> [fill]
         create line <id> <x1> <y1> <x2> <y2> [stroke]
+        create text <id> <x> <y> "content"
         create g <id>
         show <id>
         tree [id]
