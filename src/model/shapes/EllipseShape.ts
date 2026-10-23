@@ -83,6 +83,9 @@ export class EllipseShape extends Shape {
       this._strokeWidth = undefined;
       return;
     }
+    if (!["cx", "cy", "rx", "ry", "stroke-width"].includes(name)) {
+      throw new Error(`unknown attribute: ${name}`);
+    }
 
     const number = value === undefined ? NaN : Number(value);
     if (!Number.isFinite(number)) {

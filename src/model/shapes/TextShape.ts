@@ -71,6 +71,9 @@ export class TextShape extends Shape {
       this._strokeWidth = undefined;
       return;
     }
+    if (!["x", "y", "stroke-width"].includes(name)) {
+      throw new Error(`unknown attribute: ${name}`);
+    }
 
     const number = value === undefined ? NaN : Number(value);
     if (!Number.isFinite(number)) {
@@ -97,6 +100,12 @@ export class TextShape extends Shape {
     }
 
     return details;
+  }
+
+  getTreeLines(prefix = "", isLast = true): string[] {
+    const branch = isLast ? "└──" : "├──";
+    const content = this._text.replaceAll('"', '\\"');
+    return [`${prefix}${branch} text#${this.id} (${this._x},${this._y}) "${content}"`];
   }
 
   toSvg(): string {

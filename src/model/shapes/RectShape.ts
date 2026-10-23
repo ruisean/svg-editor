@@ -82,6 +82,9 @@ setAttribute(name: string, value: string | undefined): void {
     this._strokeWidth = undefined;
     return;
   }
+  if (!["x", "y", "width", "height", "stroke-width"].includes(name)) {
+    throw new Error(`unknown attribute: ${name}`);
+  }
 
   const number = value === undefined ? NaN : Number(value);
   if (!Number.isFinite(number)) {

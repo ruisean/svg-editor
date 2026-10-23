@@ -76,6 +76,9 @@ export class LineShape extends Shape {
       this._strokeWidth = undefined;
       return;
     }
+    if (!["x1", "y1", "x2", "y2", "stroke-width"].includes(name)) {
+      throw new Error(`unknown attribute: ${name}`);
+    }
 
     const number = value === undefined ? NaN : Number(value);
     if (!Number.isFinite(number)) {

@@ -74,6 +74,17 @@ export class GroupShape extends Shape {
     return [`children=${this._children.length}`];
   }
 
+  getTreeLines(prefix = "", isLast = true): string[] {
+    const lines = super.getTreeLines(prefix, isLast);
+    const childPrefix = `${prefix}${isLast ? "    " : "│   "}`;
+    this._children.forEach((child, index) => {
+      lines.push(
+        ...child.getTreeLines(childPrefix, index === this._children.length - 1),
+      );
+    });
+    return lines;
+  }
+
   toSvg(): string {
     const children = this._children.map((child) => child.toSvg()).join("\n");
     return `<g id="${this.escapeXml(this.id)}">\n${children}\n</g>`;
